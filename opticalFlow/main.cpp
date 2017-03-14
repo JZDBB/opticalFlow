@@ -3,8 +3,12 @@
 #include <iostream>
 using namespace std;
 using namespace cv;
-int Hflow(uchar* p1, uchar* p2);
-int sum(uchar* p, int mSize);
+
+//int sum(uchar* p, int mSize);
+void padding(uchar** p, int raw, int col);
+void translate1(uchar** p, uchar* p0, int col);
+void get_grad(uchar** p1, uchar** p2, uchar** u, uchar** v, int raw, int col, int imax);
+
 int main()
 {
 	//int a = 65;
@@ -30,21 +34,83 @@ int main()
 	//}
 	//return 1;
 	int im_size = 500;
-	uchar* p1 = (uchar*)malloc(im_size*im_size*sizeof(uchar));
-	uchar* p2 = (uchar*)malloc(im_size*im_size*sizeof(uchar));
-	//p = (uchar*)malloc(12 * sizeof(uchar));
 	uchar* current1 = (uchar*)img[0].data;
 	uchar* current2 = (uchar*)img[1].data;
-	for (int i = 0; i < im_size*im_size; i++)
-	{
-		*(p1++) = *(current1++);
-	}
-	for (int i = 0; i < im_size*im_size; i++)
-	{
-		*(p2++) = *(current2++);
-	}
+	uchar* p10 = (uchar*)malloc(im_size*im_size*sizeof(uchar));
+	uchar* p20 = (uchar*)malloc(im_size*im_size*sizeof(uchar));
+	uchar** p1 = (uchar**)malloc(im_size*sizeof(uchar*));
+	uchar** p2 = (uchar**)malloc(im_size*sizeof(uchar*));
 
-	//int a = Hflow(p1, p2);
+	for (int i = 0; i < im_size*im_size; i++)
+	{
+		*(p10++) = *(current1++);
+	}
+	for (int i = 0; i < im_size*im_size; i++)
+	{
+		*(p20++) = *(current2++);
+	}
+	p10 = p10 - im_size*im_size;
+	p20 = p20 - im_size*im_size;
+	//for (int i = 0; i < im_size; i++)
+	//{
+	//	*(p1 + i) = p10 + im_size*i;
+	//}
+	//for (int i = 0; i < im_size; i++)
+	//{
+	//	*(p2 + i) = p20 + im_size*i;
+	//}
+
+	translate1(p1, p10, im_size);
+	translate1(p2, p20, im_size);
+
+	/*for (int i = 0; i < im_size; i++)
+	{
+		for (int j = 0; j < im_size; j++)
+		{
+			if (i < 5 || i>495 || j < 5 || j>495)
+			{
+				*(*(p1 + i) + j) = 0;
+			}
+		}
+	}
+	for (int i = 0; i < im_size; i++)
+	{
+		for (int j = 0; j < im_size; j++)
+		{
+			if (i < 5 || i>495 || j < 5 || j>495)
+			{
+				*(*(p2 + i) + j) = 0;
+			}
+		}
+	}*/
+
+	padding(p1, im_size, im_size);
+	padding(p2, im_size, im_size);
+
+	uchar** u = (uchar**)malloc(im_size*sizeof(uchar*));
+	uchar** v = (uchar**)malloc(im_size*sizeof(uchar*));
+	uchar* u0 = (uchar*)malloc(im_size*im_size*sizeof(uchar));
+	uchar* v0 = (uchar*)malloc(im_size*im_size*sizeof(uchar));
+	translate1(u, u0, im_size);
+	translate1(v, v0, im_size);
+	get_grad(p1, p2, u, v, im_size, im_size, 20);
+	padding(u, im_size, im_size);
+	padding(v, im_size, im_size);
+
+	//for (int i = 0; i < 20; i++)
+	//{
+	//	for (int j = 0; j < 20; j++)
+	//	{
+	//		printf("%d,", *(*(u + i) + j));
+	//		printf("\n");
+	//		printf("%d,", *(*(v + i) + j));
+	//	}
+	//}
+
+
+
+
+	//Hflow(p1, p2);
 
 	return 0;
 }
@@ -140,3 +206,67 @@ int main()
 //	}
 //	return sum;
 //}
+
+void get_grad(uchar** p1, uchar** p2, uchar** u, uchar** v, int raw, int col, int imax)
+{
+	int delta;
+	int alpha = 25;
+	//uchar* dst0 = (uchar*)malloc(raw*col*sizeof(uchar));
+	//uchar* dsx10 = (uchar*)malloc(raw*col*sizeof(uchar));
+	//uchar* dsx20 = (uchar*)malloc(raw*col*sizeof(uchar));
+	//uchar** dst = (uchar**)malloc(raw*sizeof(uchar*));
+	//uchar** dsx1 = (uchar**)malloc(raw*sizeof(uchar*));
+	//uchar** dsx2 = (uchar**)malloc(raw*sizeof(uchar*));
+
+	//translate1(dst, dst0, col);
+	//translate1(dsx1, dsx10, col);
+	//translate1(dsx2, dsx20, col);
+
+	int dst = 0;
+	int dsx1 = 0;
+	int dsx2 = 0;
+
+	for (int i = 0; i < raw-1; i++)
+	{
+		for (int j = 0; j < col-1; j++)
+		{
+			*(*(u + i) + j) = 0;
+			*(*(v + i) + j) = 0;
+			dst = (int)(*(*(p2 + i + 1) + j + 1) - *(*(p1 + i + 1) + j + 1) + *(*(p2 + i) + j + 1) - *(*(p1 + i) + j + 1) + *(*(p2 + i + 1) + j) - *(*(p1 + i + 1) + j) + *(*(p2 + i) + j) - *(*(p1 + i) + j)) / 4;
+			dsx1 = (int)(*(*(p2 + i + 1) + j + 1) - *(*(p2 + i) + j + 1) + *(*(p2 + i +1) + j) - *(*(p2 + i) + j) + *(*(p1 + i + 1) + j + 1) - *(*(p1 + i) + j + 1) + *(*(p1 + i + 1) + j) - *(*(p1 + i) + j)) / 4;
+			dsx2 = (int)(*(*(p2 + i + 1) + j + 1) - *(*(p2 + i + 1) + j) + *(*(p2 + i) + j + 1) - *(*(p2 + i) + j) + *(*(p1 + i + 1) + j + 1) - *(*(p1 + i + 1) + j) + *(*(p1 + i) + j + 1) - *(*(p1 + i) + j)) / 4;
+			/*if(dsx1!=0)
+			{ 
+				system("pause");
+			}*/
+			for (int k = 0; k < imax; k++)
+			{
+				delta = (int)(dst + *(*(u + i) + j) * dsx1 + *(*(v + i) + j) * dsx2) / (alpha*alpha + dsx1*dsx1 + dsx2*dsx2);
+				*(*(u + i) + j) = (uchar)(*(*(u + i) + j) - dsx1 * delta);
+				*(*(v + i) + j) = (uchar)(*(*(v + i) + j) - dsx2 * delta);
+			}
+		}
+	}
+}
+
+void padding(uchar** p, int raw, int col)
+{
+	for (int i = 0; i < raw; i++)
+	{
+		for (int j = 0; j < col; j++)
+		{
+			if (i < 5 || i>495 || j < 5 || j>495)
+			{
+				*(*(p + i) + j) = 0;
+			}
+		}
+	}
+}
+
+void translate1(uchar** p, uchar* p0, int col)
+{
+	for (int i = 0; i < col; i++)
+	{
+		*(p + i) = p0 + col*i;
+	}
+}
