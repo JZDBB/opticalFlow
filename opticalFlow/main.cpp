@@ -7,9 +7,9 @@ using namespace std;
 using namespace cv;
 
 //int sum(uchar* p, int mSize);
-void padding(float** p, int raw, int col);
-void translate1(float** p, float* p0, int col);
-void get_grad(float** p1, float** p2, float** u, float** v, int raw, int col, int imax);
+void padding(float** p, int row, int col);
+void translate1(float** p, float* p0, int col, int row);
+void get_grad(float** p1, float** p2, float** u, float** v, int row, int col, int imax);
 
 int main()
 {
@@ -18,9 +18,11 @@ int main()
 	//system("pause");
 	int n = 2;
 	float* img[2];
-	img[0] = (float*)malloc(500 * 500 * sizeof(float));
-	img[1] = (float*)malloc(500 * 500 * sizeof(float));
-	
+	int row = 300;
+	int col = 400;
+	img[0] = (float*)malloc(row * col * sizeof(float));
+	img[1] = (float*)malloc(row * col * sizeof(float));
+		
 	for (int i = 1; i <= n; i++)
 	{
 		char filename[10];
@@ -29,16 +31,16 @@ int main()
 		float* current = img[i - 1];
 		//bgr
 		uchar* p = (uchar*)img1.data;
-		for (int j = 0; j < 250000; j++)
+		for (int j = 0; j < row*col; j++)
 		{
 			*(current++) = *(p + 3 * j)*double(0.114) + *(p + 3 * j + 1)*double(0.578) + *(p + 3 * j + 2)*double(0.299);
 		}
 		//验证
 		//current = img[i - 1];
-		//ofstream outfile("F:\\一宁\\一宁百度同步盘\\DSP\\MATLAB\\data2.txt", ofstream::out);
-		//for (int k = 0; k < 500; k++)
+		//ofstream outfile("F:\\一宁\\一宁百度同步盘\\DSP\\MATLAB\\data1.txt", ofstream::out);
+		//for (int k = 0; k < row; k++)
 		//{
-		//	for (int j = 0; j < 500; j++)
+		//	for (int j = 0; j < col; j++)
 		//	{
 		//		outfile << (float)*(current++) << ",";
 		//	}
@@ -57,13 +59,13 @@ int main()
 	//	waitkey(0);
 	//}
 	//return 1;
-	int im_size = 500;
+	
 	//float* current1 = (float*)img[0];
 	//float* current2 = (float*)img[1];
 	float* p10 = img[0];
 	float* p20 = img[1];
-	float** p1 = (float**)malloc(im_size*sizeof(float*));
-	float** p2 = (float**)malloc(im_size*sizeof(float*));
+	float** p1 = (float**)malloc(row*sizeof(float*));
+	float** p2 = (float**)malloc(row*sizeof(float*));
 
 	//for (int i = 0; i < im_size*im_size; i++)
 	//{
@@ -84,8 +86,8 @@ int main()
 	//	*(p2 + i) = p20 + im_size*i;
 	//}
 
-	translate1(p1, p10, im_size);
-	translate1(p2, p20, im_size);
+	translate1(p1, p10, col, row);
+	translate1(p2, p20, col, row);
 
 	/*for (int i = 0; i < im_size; i++)
 	{
@@ -111,13 +113,13 @@ int main()
 	//padding(p1, im_size, im_size);
 	//padding(p2, im_size, im_size);
 
-	float** u = (float**)malloc(im_size*sizeof(float*));
-	float** v = (float**)malloc(im_size*sizeof(float*));
-	float* u0 = (float*)malloc(im_size*im_size*sizeof(float));
-	float* v0 = (float*)malloc(im_size*im_size*sizeof(float));
-	translate1(u, u0, im_size);
-	translate1(v, v0, im_size);
-	get_grad(p1, p2, u, v, im_size, im_size, 20);
+	float** u = (float**)malloc(row * sizeof(float*));
+	float** v = (float**)malloc(row * sizeof(float*));
+	float* u_data = (float*)malloc(row * col * sizeof(float));
+	float* v_data = (float*)malloc(row * col * sizeof(float));
+	translate1(u, u_data, col, row);
+	translate1(v, v_data, col, row);
+	get_grad(p1, p2, u, v, row, col, 20);
 
 	//for (int i = 0; i < 20; i++)
 	//{
@@ -131,26 +133,33 @@ int main()
 
 	//验证
 	ofstream outfile("F:\\一宁\\一宁百度同步盘\\DSP\\MATLAB\\out1.txt",ofstream::out);
-	for (int i = 0; i < im_size; i++)
+	for (int i = 0; i < row; i++)
 	{
-		for (int j = 0; j < im_size; j++)
+		for (int j = 0; j < col; j++)
 		{
 			outfile << (float)*(*(u + i) + j) << ",";
 		}
 		outfile << "\n";
 	}
 	outfile.close();
-
+	
 	outfile.open("F:\\一宁\\一宁百度同步盘\\DSP\\MATLAB\\out2.txt", ofstream::out);
-	for (int i = 0; i < im_size; i++)
+	for (int i = 0; i < row; i++)
 	{
-		for (int j = 0; j < im_size; j++)
+		for (int j = 0; j < col; j++)
 		{
 			outfile << (float)*(*(v + i) + j) << ",";
 		}
 		outfile << "\n";
 	}
 	outfile.close();
+
+	int xskip = ceil(row/64);
+	int row1 = row / xskip + 1;
+	int col1 = col / xskip + 1;
+	int N = xskip*xskip;
+
+	
 
 	//Hflow(p1, p2);
 
@@ -249,7 +258,7 @@ int main()
 //	return sum;
 //}
 
-void get_grad(float** p1, float** p2, float** u, float** v, int raw, int col, int imax)
+void get_grad(float** p1, float** p2, float** u, float** v, int row, int col, int imax)
 {
 	float delta;
 	int alpha = 625;
@@ -268,13 +277,13 @@ void get_grad(float** p1, float** p2, float** u, float** v, int raw, int col, in
 	float dsx1 = 0;
 	float dsx2 = 0;
 
-	for (int i = 0; i < raw; i++)
+	for (int i = 0; i < row; i++)
 	{
 		for (int j = 0; j < col; j++)
 		{
 			*(*(u + i) + j) = 0;
 			*(*(v + i) + j) = 0;
-			if (i < 4 || i>495 || j < 4 || j>495)
+			if (i < 4 || i>row-5 || j < 4 || j>col-5)
 			{
 				
 				dst = 0;
@@ -302,24 +311,26 @@ void get_grad(float** p1, float** p2, float** u, float** v, int raw, int col, in
 	}
 }
 
-void padding(float** p, int raw, int col)
-{
-	for (int i = 0; i < raw; i++)
-	{
-		for (int j = 0; j < col; j++)
-		{
-			if (i < 5 || i>495 || j < 5 || j>495)
-			{
-				*(*(p + i) + j) = 0;
-			}
-		}
-	}
-}
+//
+//void padding(float** p, int row, int col)
+//{
+//	for (int i = 0; i < row; i++)
+//	{
+//		for (int j = 0; j < col; j++)
+//		{
+//			if (i < 5 || i>495 || j < 5 || j>495)
+//			{
+//				*(*(p + i) + j) = 0;
+//			}
+//		}
+//	}
+//}
 
-void translate1(float** p, float* p0, int col)
+void translate1(float** p, float* p0, int col, int row)
 {
-	for (int i = 0; i < col; i++)
+	for (int i = 0; i < row; i++)
 	{
 		*(p + i) = p0 + col*i;
 	}
 }
+
