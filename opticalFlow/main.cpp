@@ -1,13 +1,15 @@
 #include <stdio.h>
 #include <opencv2\opencv.hpp>
 #include <iostream>
+#include <iomanip>  
+#include <fstream> 
 using namespace std;
 using namespace cv;
 
 //int sum(uchar* p, int mSize);
-void padding(uchar** p, int raw, int col);
-void translate1(uchar** p, uchar* p0, int col);
-void get_grad(uchar** p1, uchar** p2, uchar** u, uchar** v, int raw, int col, int imax);
+void padding(float** p, int raw, int col);
+void translate1(float** p, float* p0, int col);
+void get_grad(float** p1, float** p2, float** u, float** v, int raw, int col, int imax);
 
 int main()
 {
@@ -15,12 +17,34 @@ int main()
 	//printf("%c\n", a);
 	//system("pause");
 	int n = 2;
-	Mat img[2];
+	float* img[2];
+	img[0] = (float*)malloc(500 * 500 * sizeof(float));
+	img[1] = (float*)malloc(500 * 500 * sizeof(float));
+	
 	for (int i = 1; i <= n; i++)
 	{
 		char filename[10];
 		sprintf_s(filename, "%d.bmp", i);
-		img[i - 1] = imread(filename, 0);
+		Mat img1 = imread(filename);
+		float* current = img[i - 1];
+		//bgr
+		uchar* p = (uchar*)img1.data;
+		for (int j = 0; j < 250000; j++)
+		{
+			*(current++) = *(p + 3 * j)*double(0.114) + *(p + 3 * j + 1)*double(0.578) + *(p + 3 * j + 2)*double(0.299);
+		}
+		//验证
+		//current = img[i - 1];
+		//ofstream outfile("F:\\一宁\\一宁百度同步盘\\DSP\\MATLAB\\data2.txt", ofstream::out);
+		//for (int k = 0; k < 500; k++)
+		//{
+		//	for (int j = 0; j < 500; j++)
+		//	{
+		//		outfile << (float)*(current++) << ",";
+		//	}
+		//	outfile << "\n";
+		//}
+		//outfile.close();
 	}
 	//for (int i = 0; i < 4; i++)
 	//	for (int j = 0; j < 3; j++)
@@ -34,23 +58,23 @@ int main()
 	//}
 	//return 1;
 	int im_size = 500;
-	uchar* current1 = (uchar*)img[0].data;
-	uchar* current2 = (uchar*)img[1].data;
-	uchar* p10 = (uchar*)malloc(im_size*im_size*sizeof(uchar));
-	uchar* p20 = (uchar*)malloc(im_size*im_size*sizeof(uchar));
-	uchar** p1 = (uchar**)malloc(im_size*sizeof(uchar*));
-	uchar** p2 = (uchar**)malloc(im_size*sizeof(uchar*));
+	//float* current1 = (float*)img[0];
+	//float* current2 = (float*)img[1];
+	float* p10 = img[0];
+	float* p20 = img[1];
+	float** p1 = (float**)malloc(im_size*sizeof(float*));
+	float** p2 = (float**)malloc(im_size*sizeof(float*));
 
-	for (int i = 0; i < im_size*im_size; i++)
-	{
-		*(p10++) = *(current1++);
-	}
-	for (int i = 0; i < im_size*im_size; i++)
-	{
-		*(p20++) = *(current2++);
-	}
-	p10 = p10 - im_size*im_size;
-	p20 = p20 - im_size*im_size;
+	//for (int i = 0; i < im_size*im_size; i++)
+	//{
+	//	*(p10++) = (float)*(current1++);
+	//}
+	//for (int i = 0; i < im_size*im_size; i++)
+	//{
+	//	*(p20++) = (float)*(current2++);
+	//}
+	//p10 = p10 - im_size*im_size;
+	//p20 = p20 - im_size*im_size;
 	//for (int i = 0; i < im_size; i++)
 	//{
 	//	*(p1 + i) = p10 + im_size*i;
@@ -84,18 +108,16 @@ int main()
 		}
 	}*/
 
-	padding(p1, im_size, im_size);
-	padding(p2, im_size, im_size);
+	//padding(p1, im_size, im_size);
+	//padding(p2, im_size, im_size);
 
-	uchar** u = (uchar**)malloc(im_size*sizeof(uchar*));
-	uchar** v = (uchar**)malloc(im_size*sizeof(uchar*));
-	uchar* u0 = (uchar*)malloc(im_size*im_size*sizeof(uchar));
-	uchar* v0 = (uchar*)malloc(im_size*im_size*sizeof(uchar));
+	float** u = (float**)malloc(im_size*sizeof(float*));
+	float** v = (float**)malloc(im_size*sizeof(float*));
+	float* u0 = (float*)malloc(im_size*im_size*sizeof(float));
+	float* v0 = (float*)malloc(im_size*im_size*sizeof(float));
 	translate1(u, u0, im_size);
 	translate1(v, v0, im_size);
 	get_grad(p1, p2, u, v, im_size, im_size, 20);
-	padding(u, im_size, im_size);
-	padding(v, im_size, im_size);
 
 	//for (int i = 0; i < 20; i++)
 	//{
@@ -107,8 +129,28 @@ int main()
 	//	}
 	//}
 
+	//验证
+	ofstream outfile("F:\\一宁\\一宁百度同步盘\\DSP\\MATLAB\\out1.txt",ofstream::out);
+	for (int i = 0; i < im_size; i++)
+	{
+		for (int j = 0; j < im_size; j++)
+		{
+			outfile << (float)*(*(u + i) + j) << ",";
+		}
+		outfile << "\n";
+	}
+	outfile.close();
 
-
+	outfile.open("F:\\一宁\\一宁百度同步盘\\DSP\\MATLAB\\out2.txt", ofstream::out);
+	for (int i = 0; i < im_size; i++)
+	{
+		for (int j = 0; j < im_size; j++)
+		{
+			outfile << (float)*(*(v + i) + j) << ",";
+		}
+		outfile << "\n";
+	}
+	outfile.close();
 
 	//Hflow(p1, p2);
 
@@ -116,7 +158,7 @@ int main()
 }
 
 
-//int Hflow(uchar* p1)
+//int Hflow(uchar* p1)//栈溢出弃用，数组存在栈
 //{
 //	uchar* p2=NULL;
 //	int im_size = 500;
@@ -207,10 +249,10 @@ int main()
 //	return sum;
 //}
 
-void get_grad(uchar** p1, uchar** p2, uchar** u, uchar** v, int raw, int col, int imax)
+void get_grad(float** p1, float** p2, float** u, float** v, int raw, int col, int imax)
 {
-	int delta;
-	int alpha = 25;
+	float delta;
+	int alpha = 625;
 	//uchar* dst0 = (uchar*)malloc(raw*col*sizeof(uchar));
 	//uchar* dsx10 = (uchar*)malloc(raw*col*sizeof(uchar));
 	//uchar* dsx20 = (uchar*)malloc(raw*col*sizeof(uchar));
@@ -222,34 +264,45 @@ void get_grad(uchar** p1, uchar** p2, uchar** u, uchar** v, int raw, int col, in
 	//translate1(dsx1, dsx10, col);
 	//translate1(dsx2, dsx20, col);
 
-	int dst = 0;
-	int dsx1 = 0;
-	int dsx2 = 0;
+	float dst = 0;
+	float dsx1 = 0;
+	float dsx2 = 0;
 
-	for (int i = 0; i < raw-1; i++)
+	for (int i = 0; i < raw; i++)
 	{
-		for (int j = 0; j < col-1; j++)
+		for (int j = 0; j < col; j++)
 		{
 			*(*(u + i) + j) = 0;
 			*(*(v + i) + j) = 0;
-			dst = (int)(*(*(p2 + i + 1) + j + 1) - *(*(p1 + i + 1) + j + 1) + *(*(p2 + i) + j + 1) - *(*(p1 + i) + j + 1) + *(*(p2 + i + 1) + j) - *(*(p1 + i + 1) + j) + *(*(p2 + i) + j) - *(*(p1 + i) + j)) / 4;
-			dsx1 = (int)(*(*(p2 + i + 1) + j + 1) - *(*(p2 + i) + j + 1) + *(*(p2 + i +1) + j) - *(*(p2 + i) + j) + *(*(p1 + i + 1) + j + 1) - *(*(p1 + i) + j + 1) + *(*(p1 + i + 1) + j) - *(*(p1 + i) + j)) / 4;
-			dsx2 = (int)(*(*(p2 + i + 1) + j + 1) - *(*(p2 + i + 1) + j) + *(*(p2 + i) + j + 1) - *(*(p2 + i) + j) + *(*(p1 + i + 1) + j + 1) - *(*(p1 + i + 1) + j) + *(*(p1 + i) + j + 1) - *(*(p1 + i) + j)) / 4;
-			/*if(dsx1!=0)
-			{ 
-				system("pause");
-			}*/
+			if (i < 4 || i>495 || j < 4 || j>495)
+			{
+				
+				dst = 0;
+				dsx1 = 0;
+				dsx2 = 0;
+			}
+			else {
+				
+				dst = (float)(*(*(p2 + i + 1) + j + 1) - *(*(p1 + i + 1) + j + 1) + *(*(p2 + i) + j + 1) - *(*(p1 + i) + j + 1) + *(*(p2 + i + 1) + j) - *(*(p1 + i + 1) + j) + *(*(p2 + i) + j) - *(*(p1 + i) + j)) / 4;
+				dsx2 = (float)(*(*(p2 + i + 1) + j + 1) - *(*(p2 + i) + j + 1) + *(*(p2 + i + 1) + j) - *(*(p2 + i) + j) + *(*(p1 + i + 1) + j + 1) - *(*(p1 + i) + j + 1) + *(*(p1 + i + 1) + j) - *(*(p1 + i) + j)) / 4;
+				dsx1 = (float)(*(*(p2 + i + 1) + j + 1) - *(*(p2 + i + 1) + j) + *(*(p2 + i) + j + 1) - *(*(p2 + i) + j) + *(*(p1 + i + 1) + j + 1) - *(*(p1 + i + 1) + j) + *(*(p1 + i) + j + 1) - *(*(p1 + i) + j)) / 4;
+
+			}
+			
 			for (int k = 0; k < imax; k++)
 			{
-				delta = (int)(dst + *(*(u + i) + j) * dsx1 + *(*(v + i) + j) * dsx2) / (alpha*alpha + dsx1*dsx1 + dsx2*dsx2);
-				*(*(u + i) + j) = (uchar)(*(*(u + i) + j) - dsx1 * delta);
-				*(*(v + i) + j) = (uchar)(*(*(v + i) + j) - dsx2 * delta);
+				delta = (dst + *(*(u + i) + j) * dsx1 + *(*(v + i) + j) * dsx2) / (alpha + dsx1*dsx1 + dsx2*dsx2);
+				*(*(u + i) + j) = (float)(*(*(u + i) + j) - dsx1 * delta);
+				*(*(v + i) + j) = (float)(*(*(v + i) + j) - dsx2 * delta);
+				//if (*(*(u + i) + j) != 0) {
+				//	getchar();
+				//}
 			}
 		}
 	}
 }
 
-void padding(uchar** p, int raw, int col)
+void padding(float** p, int raw, int col)
 {
 	for (int i = 0; i < raw; i++)
 	{
@@ -263,7 +316,7 @@ void padding(uchar** p, int raw, int col)
 	}
 }
 
-void translate1(uchar** p, uchar* p0, int col)
+void translate1(float** p, float* p0, int col)
 {
 	for (int i = 0; i < col; i++)
 	{
