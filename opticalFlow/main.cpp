@@ -10,6 +10,8 @@ using namespace cv;
 void padding(float** p, int row, int col);
 void translate1(float** p, float* p0, int col, int row);
 void get_grad(float** p1, float** p2, float** u, float** v, int row, int col, int imax);
+float sum_matrix(float** p, int hk, int hl, int wk, int wl, int N);
+int round1(float r);
 
 int main()
 {
@@ -154,14 +156,53 @@ int main()
 	}
 	outfile.close();
 
-	int xskip = ceil(row/64);
-	int row1 = row / xskip + 1;
-	int col1 = col / xskip + 1;
+	int xskip = round1((float)row/64);
+	int row1 = row / xskip;
+	int col1 = col / xskip;
 	int N = xskip*xskip;
 
-	
+	float** us = (float**)malloc(row1 * sizeof(float*));
+	float** vs = (float**)malloc(row1 * sizeof(float*));
+	float* us_data = (float*)malloc(row1 * col1 * sizeof(float));
+	float* vs_data = (float*)malloc(row1 * col1 * sizeof(float));
+	translate1(us, us_data, col1, row1);
+	translate1(vs, vs_data, col1, row1);
 
-	//Hflow(p1, p2);
+	for (int i = 0; i < row1-1; i++)
+	{
+		for (int j = 0; j < col1-1; j++)
+		{
+			int hk = i*xskip + 1;
+			int hl = i*xskip + xskip;
+			int wk = j*xskip + 1;
+			int wl = j*xskip + xskip;
+			*(*(us + i) + j) = sum_matrix(u, hk, hl, wk, wl, N);
+			*(*(vs + i) + j) = sum_matrix(v, hk, hl, wk, wl, N);
+		}
+	}
+
+	//验证
+	outfile.open("F:\\一宁\\一宁百度同步盘\\DSP\\MATLAB\\outs1.txt",ofstream::out);
+	for (int i = 0; i < row1; i++)
+	{
+		for (int j = 0; j < col1; j++)
+		{
+			outfile << (float)*(*(us + i) + j) << ",";
+		}
+		outfile << "\n";
+	}
+	outfile.close();
+	
+	outfile.open("F:\\一宁\\一宁百度同步盘\\DSP\\MATLAB\\outs2.txt", ofstream::out);
+	for (int i = 0; i < row1; i++)
+	{
+		for (int j = 0; j < col1; j++)
+		{
+			outfile << (float)*(*(vs + i) + j) << ",";
+		}
+		outfile << "\n";
+	}
+	outfile.close();
 
 	return 0;
 }
@@ -334,3 +375,20 @@ void translate1(float** p, float* p0, int col, int row)
 	}
 }
 
+int round1(float r)
+{
+	return (int)(r - int(r)) > 0.5 ? floor(r) : ceil(r);
+}
+
+float sum_matrix(float** p, int hk, int hl, int wk, int wl, int N)
+{
+	float sum = 0;
+	for (int i = hk; i < hl; i++)
+	{
+		for (int j = wk; j < wl; j++)
+		{
+			sum = sum + *(*(p + i) + j) / N;
+		}
+	}
+	return sum;
+}

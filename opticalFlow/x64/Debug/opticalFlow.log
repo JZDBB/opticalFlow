@@ -3,5 +3,7 @@ e:\zzss\opticalflow\lib\3rdparty\opencv3.1\include\opencv2\core\mat.hpp(1965): w
 e:\zzss\opticalflow\lib\3rdparty\opencv3.1\include\opencv2\core\persistence.hpp : warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
 e:\zzss\opticalflow\lib\3rdparty\opencv3.1\include\opencv2\core\utility.hpp : warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
 e:\zzss\opticalflow\lib\3rdparty\opencv3.1\include\opencv2\core\utility.hpp : warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+e:\zzss\opticalflow\opticalflow\main.cpp(38): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
+e:\zzss\opticalflow\opticalflow\main.cpp(380): warning C4244: “return”: 从“float”转换到“int”，可能丢失数据
   opticalFlow.vcxproj -> E:\zzss\opticalFlow\x64\Debug\opticalFlow.exe
   opticalFlow.vcxproj -> E:\zzss\opticalFlow\x64\Debug\opticalFlow.pdb (Full PDB)
