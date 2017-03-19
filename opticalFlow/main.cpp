@@ -20,8 +20,8 @@ int main()
 	//system("pause");
 	int n = 2;
 	float* img[2];
-	int row = 300;
-	int col = 400;
+	int row = 576;
+	int col = 720;
 	img[0] = (float*)malloc(row * col * sizeof(float));
 	img[1] = (float*)malloc(row * col * sizeof(float));
 		
@@ -39,7 +39,7 @@ int main()
 		}
 		//验证
 		//current = img[i - 1];
-		//ofstream outfile("F:\\一宁\\一宁百度同步盘\\DSP\\MATLAB\\data1.txt", ofstream::out);
+		//ofstream outfile("F:\\一宁\\一宁百度同步盘\\DSP\\MATLAB\\data2.txt", ofstream::out);
 		//for (int k = 0; k < row; k++)
 		//{
 		//	for (int j = 0; j < col; j++)
@@ -180,6 +180,8 @@ int main()
 			*(*(vs + i) + j) = sum_matrix(v, hk, hl, wk, wl, N);
 		}
 	}
+	padding(us, row1, col1);
+	padding(vs, row1, col1);
 
 	//验证
 	outfile.open("F:\\一宁\\一宁百度同步盘\\DSP\\MATLAB\\outs1.txt",ofstream::out);
@@ -352,20 +354,20 @@ void get_grad(float** p1, float** p2, float** u, float** v, int row, int col, in
 	}
 }
 
-//
-//void padding(float** p, int row, int col)
-//{
-//	for (int i = 0; i < row; i++)
-//	{
-//		for (int j = 0; j < col; j++)
-//		{
-//			if (i < 5 || i>495 || j < 5 || j>495)
-//			{
-//				*(*(p + i) + j) = 0;
-//			}
-//		}
-//	}
-//}
+
+void padding(float** p, int row, int col)
+{
+	for (int i = 0; i < row; i++)
+	{
+		for (int j = 0; j < col; j++)
+		{
+			if ( i>row-2|| j>col-2)
+			{
+				*(*(p + i) + j) = 0;
+			}
+		}
+	}
+}
 
 void translate1(float** p, float* p0, int col, int row)
 {
@@ -383,9 +385,9 @@ int round1(float r)
 float sum_matrix(float** p, int hk, int hl, int wk, int wl, int N)
 {
 	float sum = 0;
-	for (int i = hk; i < hl; i++)
+	for (int i = hk-1; i < hl; i++)
 	{
-		for (int j = wk; j < wl; j++)
+		for (int j = wk-1; j < wl; j++)
 		{
 			sum = sum + *(*(p + i) + j) / N;
 		}
